@@ -15,6 +15,9 @@ GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-w -s' -o coupons.darw
 ## Config
 
 ```yaml
+log: "/log/path"
+logLevel: 1
+
 # Client information
 sessionPath: "/path/to/session"
 sessionPass: "session password"
