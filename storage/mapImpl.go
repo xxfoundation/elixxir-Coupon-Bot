@@ -10,6 +10,11 @@ func (m *MapImpl) GetCouponCode(trigger string) (string, error) {
 	if !ok {
 		return "", errors.New(fmt.Sprintf("No coupon for trigger %s", trigger))
 	}
+	if c.Uses <= 0 {
+		return "", errors.New("No uses left for requested coupon")
+	}
+	c.Uses = c.Uses - 1
+	m.coupons[trigger] = c
 	return c.Code, nil
 }
 
