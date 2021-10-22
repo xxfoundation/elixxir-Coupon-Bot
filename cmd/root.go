@@ -109,7 +109,7 @@ var rootCmd = &cobra.Command{
 		rcb := func(requestor contact.Contact, message string) {
 			rid, err := cl.ConfirmAuthenticatedChannel(requestor)
 			if err != nil {
-				jww.ERROR.Printf("Failed to confirm authentecated channel to %+v: %+v", requestor, err)
+				jww.ERROR.Printf("Failed to confirm authenticated channel to %+v: %+v", requestor, err)
 			}
 			jww.DEBUG.Printf("Authenticated channel to %+v created over round %d", requestor, rid)
 		}
