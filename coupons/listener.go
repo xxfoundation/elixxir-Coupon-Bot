@@ -22,7 +22,14 @@ func (l *listener) Hear(item message.Receive) {
 	}
 
 	// Parse the trigger
-	trigger := string(item.Payload)
+	in := &CMIXText{}
+	trigger := ""
+	err := proto.Unmarshal(item.Payload, in)
+	if err != nil {
+		jww.ERROR.Printf("Could not unmartial message from messenger: %+v", err)
+	} else {
+		trigger = in.Text
+	}
 
 	// Retrieve coupon code for trigger if it exists
 	strResponse, err := l.s.GetCouponCode(trigger)
