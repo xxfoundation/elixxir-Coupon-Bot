@@ -1,0 +1,19 @@
+log: "coupons.log"
+logLevel: 1
+
+# Client information
+sessionPath: "couponsession"
+sessionPass: "password"
+networkFollowerTimeout: 60
+ndf: "/Users/jonahhusson/Downloads/ndf.json"
+
+# QR options
+qrSize: 512
+qrLevel: 1
+qrPath: "/tmp/couponqr.png"
+
+# Database connection information
+dbUsername: "jonahhusson"
+dbPassword: ""
+dbName: "coupons"
+dbAddress: "0.0.0.0:5432"
