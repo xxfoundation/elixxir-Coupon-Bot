@@ -1,4 +1,4 @@
-package coupons
+package main
 
 import "git.xx.network/elixxir/coupons/cmd"
 

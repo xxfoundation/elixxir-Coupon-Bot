@@ -10,7 +10,7 @@ ndf: "/Users/jonahhusson/Downloads/ndf.json"
 # QR options
 qrSize: 512
 qrLevel: 1
-qrPath: /cmix/qr.png
+qrPath: "/tmp/couponqr.png"
 
 # Database connection information
 dbUsername: "jonahhusson"

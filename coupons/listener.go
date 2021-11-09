@@ -2,6 +2,7 @@ package coupons
 
 import (
 	"git.xx.network/elixxir/coupons/storage"
+	"github.com/golang/protobuf/proto"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/elixxir/client/api"
 	"gitlab.com/elixxir/client/interfaces/message"
@@ -24,15 +25,23 @@ func (l *listener) Hear(item message.Receive) {
 	trigger := string(item.Payload)
 
 	// Retrieve coupon code for trigger if it exists
-	c, err := l.s.GetCouponCode(trigger)
+	strResponse, err := l.s.GetCouponCode(trigger)
 	if err != nil {
 		jww.DEBUG.Printf("No coupon code for trigger %s: %+v", trigger, err)
+		strResponse = "No coupon found for trigger " + trigger
 	}
 
+	payload := &CMIXText{
+		Text: strResponse,
+	}
+	marshalled, err := proto.Marshal(payload)
+	if err != nil {
+		jww.ERROR.Printf("Failed to marshal payload: %+v", err)
+	}
 	// Create response message
 	resp := message.Send{
 		Recipient:   item.Sender,
-		Payload:     []byte(c),
+		Payload:     marshalled,
 		MessageType: message.Text,
 	}
 
@@ -41,7 +50,7 @@ func (l *listener) Hear(item message.Receive) {
 	if err != nil {
 		jww.ERROR.Printf("Failed to send message: %+v", err)
 	}
-	jww.INFO.Printf("Sent coupon %s [%+v] to %+v on rounds %+v [%+v]", c, mid, item.Sender.String(), rids, t)
+	jww.INFO.Printf("Sent response %s [%+v] to %+v on rounds %+v [%+v]", strResponse, mid, item.Sender.String(), rids, t)
 }
 
 // Name returns a name, used for debugging

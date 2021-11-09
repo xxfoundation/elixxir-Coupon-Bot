@@ -12,6 +12,7 @@ import (
 	"gitlab.com/elixxir/client/interfaces/message"
 	"gitlab.com/elixxir/client/interfaces/params"
 	"gitlab.com/elixxir/crypto/contact"
+	"gitlab.com/elixxir/primitives/fact"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/utils"
 	"io/ioutil"
@@ -89,7 +90,13 @@ var rootCmd = &cobra.Command{
 		qrSize := viper.GetInt("qrSize")
 		qrLevel := qrcode.RecoveryLevel(viper.GetInt("qrLevel"))
 		qrPath := viper.GetString("qrPath")
-		qr, err := cl.GetUser().GetContact().MakeQR(qrSize, qrLevel)
+		me := cl.GetUser().GetContact()
+		couponsUsername, err := fact.NewFact(fact.Username, "xx Coupons Bot")
+		if err != nil {
+			jww.FATAL.Panicf("Failed to create username: %+v", err)
+		}
+		me.Facts = append(me.Facts, couponsUsername)
+		qr, err := me.MakeQR(qrSize, qrLevel)
 		if err != nil {
 			jww.FATAL.Panicf("Failed to generate QR code: %+v", err)
 		}
@@ -130,6 +137,13 @@ func Execute() {
 		jww.ERROR.Println(err)
 		os.Exit(1)
 	}
+}
+
+func init() {
+	rootCmd.Flags().StringVarP(&cfgFile, "config", "c", "",
+		"Path to load the UDB configuration file from. If not set, this "+
+			"file must be named udb.yaml and must be located in "+
+			"~/.xxnetwork/, /opt/xxnetwork, or /etc/xxnetwork.")
 }
 
 // initConfig reads in config file and ENV variables if set.
