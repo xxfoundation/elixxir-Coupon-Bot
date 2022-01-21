@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"git.xx.network/elixxir/coupons/coupons"
 	"git.xx.network/elixxir/coupons/storage"
+	"github.com/golang/protobuf/proto"
 	"github.com/skip2/go-qrcode"
 	"github.com/spf13/cobra"
 	jww "github.com/spf13/jwalterweatherman"
@@ -113,12 +114,44 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Create & register callback to confirm any authenticated channel requests
-		rcb := func(requestor contact.Contact, message string) {
+		rcb := func(requestor contact.Contact, msg string) {
 			rid, err := cl.ConfirmAuthenticatedChannel(requestor)
 			if err != nil {
 				jww.ERROR.Printf("Failed to confirm authenticated channel to %+v: %+v", requestor, err)
 			}
 			jww.DEBUG.Printf("Authenticated channel to %+v created over round %d", requestor, rid)
+
+			intro := "Thank you for your interest in xx coin! This bot allows purchasers in the " +
+				"November Community Sale to claim their extra bonus 100% xx coins for using the xx messenger.\n" +
+				"You have received an email from the team with a code you will need to use in order to claim coins.\n" +
+				"Please send that code to this bot, which will confirm your receipt. The coins will be sent to your " +
+				"wallet within 2 weeks.\nCoins will be received in the wallet you received the initial purchase amount in.\n"
+			payload := &coupons.CMIXText{Text: intro}
+			marshalled, err := proto.Marshal(payload)
+			if err != nil {
+				jww.ERROR.Printf("Failed to marshal payload: %+v", err)
+				return
+			}
+
+			contact, err := cl.GetAuthenticatedChannelRequest(requestor.ID)
+			if err != nil {
+				jww.ERROR.Printf("Could not get authenticated channel request info: %+v", err)
+				return
+			}
+
+			// Create response message
+			resp := message.Send{
+				Recipient:   contact.ID,
+				Payload:     marshalled,
+				MessageType: message.Text,
+			}
+
+			rids, mid, t, err := cl.SendE2E(resp, params.GetDefaultE2E())
+			if err != nil {
+				jww.ERROR.Printf("Failed to send message: %+v", err)
+				return
+			}
+			jww.INFO.Printf("Sent intro [%+v] to %+v on rounds %+v [%+v]", mid, requestor, rids, t)
 		}
 		cl.GetAuthRegistrar().AddGeneralRequestCallback(rcb)
 

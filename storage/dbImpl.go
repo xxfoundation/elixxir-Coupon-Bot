@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (db *DatabaseImpl) GetCouponCode(trigger string) (string, error) {
+func (db *DatabaseImpl) GetCouponCode(trigger string) (string, int, error) {
 	var c = &Coupon{}
 	err := db.db.Transaction(func(tx *gorm.DB) error {
 		err := tx.First(&c, "trigger = ?", trigger).Error
@@ -23,10 +23,10 @@ func (db *DatabaseImpl) GetCouponCode(trigger string) (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	return c.Code, nil
+	return c.Code, int(c.Uses), nil
 }
 
 func (db *DatabaseImpl) InsertCoupon(c Coupon) error {

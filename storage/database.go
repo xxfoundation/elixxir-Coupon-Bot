@@ -13,7 +13,7 @@ import (
 
 // database interface holds function definitions for storage
 type database interface {
-	GetCouponCode(trigger string) (string, error)
+	GetCouponCode(trigger string) (string, int, error)
 	InsertCoupon(c Coupon) error
 }
 
