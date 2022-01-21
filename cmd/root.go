@@ -92,7 +92,7 @@ var rootCmd = &cobra.Command{
 		qrLevel := qrcode.RecoveryLevel(viper.GetInt("qrLevel"))
 		qrPath := viper.GetString("qrPath")
 		me := cl.GetUser().GetContact()
-		couponsUsername, err := fact.NewFact(fact.Username, "xx Coupons Bot")
+		couponsUsername, err := fact.NewFact(fact.Username, "xx bonus coin bot")
 		if err != nil {
 			jww.FATAL.Panicf("Failed to create username: %+v", err)
 		}
@@ -121,12 +121,17 @@ var rootCmd = &cobra.Command{
 			}
 			jww.DEBUG.Printf("Authenticated channel to %+v created over round %d", requestor, rid)
 
+			time.Sleep(100 * time.Millisecond)
+
 			intro := "Thank you for your interest in xx coin! This bot allows purchasers in the " +
 				"November Community Sale to claim their extra bonus 100% xx coins for using the xx messenger.\n" +
 				"You have received an email from the team with a code you will need to use in order to claim coins.\n" +
 				"Please send that code to this bot, which will confirm your receipt. The coins will be sent to your " +
 				"wallet within 2 weeks.\nCoins will be received in the wallet you received the initial purchase amount in.\n"
-			payload := &coupons.CMIXText{Text: intro}
+			payload := &coupons.CMIXText{
+				Version: 0,
+				Text:    intro,
+			}
 			marshalled, err := proto.Marshal(payload)
 			if err != nil {
 				jww.ERROR.Printf("Failed to marshal payload: %+v", err)
@@ -143,7 +148,7 @@ var rootCmd = &cobra.Command{
 			resp := message.Send{
 				Recipient:   contact.ID,
 				Payload:     marshalled,
-				MessageType: message.Text,
+				MessageType: message.XxMessage,
 			}
 
 			rids, mid, t, err := cl.SendE2E(resp, params.GetDefaultE2E())
@@ -157,7 +162,7 @@ var rootCmd = &cobra.Command{
 
 		// Create coupons impl & register listener on zero user for text messages
 		impl := coupons.New(s, cl)
-		cl.GetSwitchboard().RegisterListener(&id.ZeroUser, message.Text, impl)
+		cl.GetSwitchboard().RegisterListener(&id.ZeroUser, message.XxMessage, impl)
 
 		// Wait 5ever
 		select {}
