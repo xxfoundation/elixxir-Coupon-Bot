@@ -92,7 +92,7 @@ var rootCmd = &cobra.Command{
 		qrLevel := qrcode.RecoveryLevel(viper.GetInt("qrLevel"))
 		qrPath := viper.GetString("qrPath")
 		me := cl.GetUser().GetContact()
-		couponsUsername, err := fact.NewFact(fact.Username, "xx bonus coin bot")
+		couponsUsername, err := fact.NewFact(fact.Username, "xx-bonus-coin-bot")
 		if err != nil {
 			jww.FATAL.Panicf("Failed to create username: %+v", err)
 		}
