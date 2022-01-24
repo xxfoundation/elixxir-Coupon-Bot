@@ -107,12 +107,6 @@ var rootCmd = &cobra.Command{
 			jww.FATAL.Panicf("Failed to write QR code: %+v", err)
 		}
 
-		// Start network follower
-		err = cl.StartNetworkFollower(networkFollowerTimeout)
-		if err != nil {
-			jww.FATAL.Panicf("Failed to start network follower: %+v", err)
-		}
-
 		// Create & register callback to confirm any authenticated channel requests
 		rcb := func(requestor contact.Contact, msg string) {
 			rid, err := cl.ConfirmAuthenticatedChannel(requestor)
@@ -163,6 +157,12 @@ var rootCmd = &cobra.Command{
 		// Create coupons impl & register listener on zero user for text messages
 		impl := coupons.New(s, cl)
 		cl.GetSwitchboard().RegisterListener(&id.ZeroUser, message.XxMessage, impl)
+
+		// Start network follower
+		err = cl.StartNetworkFollower(networkFollowerTimeout)
+		if err != nil {
+			jww.FATAL.Panicf("Failed to start network follower: %+v", err)
+		}
 
 		// Wait 5ever
 		select {}
