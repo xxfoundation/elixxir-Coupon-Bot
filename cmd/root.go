@@ -29,9 +29,9 @@ var (
 
 // RootCmd represents the base command when called without any sub-commands
 var rootCmd = &cobra.Command{
-	Use:   "UDB",
-	Short: "Runs the cMix UDB server.",
-	Long:  "The cMix UDB server handles user and fact registration for the network.",
+	Use:   "Coins",
+	Short: "Runs the coins bot.",
+	Long:  "The cMix coupon bot handles incoming requests to see coin redemption info",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config & logging
@@ -65,26 +65,56 @@ var rootCmd = &cobra.Command{
 
 		// Get session parameters
 		sessionPath := viper.GetString("sessionPath")
+
+		// Only require proto user path if session does not exist
+		var protoUserJson []byte
+		protoUserPath, err := utils.ExpandPath(viper.GetString("protoUserPath"))
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to read proto path: %+v", err)
+		} else if protoUserPath == "" {
+			jww.WARN.Printf("protoUserPath is blank - a new session will be generated")
+		}
+
 		sessionPass := viper.GetString("sessionPass")
 		networkFollowerTimeout := time.Duration(viper.GetInt("networkFollowerTimeout")) * time.Second
 
-		// Create the client if there's no session
-		if _, err := os.Stat(sessionPath); os.IsNotExist(err) {
-			ndfPath := viper.GetString("ndf")
-			ndfJSON, err := ioutil.ReadFile(ndfPath)
-			if err != nil {
-				jww.FATAL.Panicf("Failed to read NDF: %+v", err)
-			}
+		ndfPath := viper.GetString("ndf")
+		ndfJSON, err := ioutil.ReadFile(ndfPath)
+		if err != nil {
+			jww.FATAL.Panicf("Failed to read NDF: %+v", err)
+		}
+
+		nwParams := params.GetDefaultNetwork()
+
+		useProto := protoUserPath != "" && utils.Exists(protoUserPath)
+		useSession := sessionPath != "" && utils.Exists(sessionPath)
+
+		if !useProto && !useSession {
 			err = api.NewClient(string(ndfJSON), sessionPath, []byte(sessionPass), "")
 			if err != nil {
 				jww.FATAL.Panicf("Failed to create new client: %+v", err)
 			}
+			useSession = true
 		}
 
-		// Create client object
-		cl, err := api.Login(sessionPath, []byte(sessionPass), params.GetDefaultNetwork())
-		if err != nil {
-			jww.FATAL.Panicf("Failed to initialize client: %+v", err)
+		var cl *api.Client
+		if useSession {
+			//  If the session exists, load & login
+			// Create client object
+			cl, err = api.Login(sessionPath, []byte(sessionPass), nwParams)
+			if err != nil {
+				jww.FATAL.Panicf("Failed to initialize client: %+v", err)
+			}
+		} else if useProto {
+			// If the session does not exist but we have a proto file
+			// Log in using the protofile (attempt to rebuild session)
+			cl, err = api.LoginWithProtoClient(sessionPath,
+				[]byte(sessionPass), protoUserJson, string(ndfJSON), nwParams)
+			if err != nil {
+				jww.FATAL.Fatalf("Failed to create client: %+v", err)
+			}
+		} else {
+			jww.FATAL.Panicf("Cannot run with no session or proto info")
 		}
 
 		// Generate QR code
@@ -179,8 +209,8 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringVarP(&cfgFile, "config", "c", "",
-		"Path to load the UDB configuration file from. If not set, this "+
-			"file must be named udb.yaml and must be located in "+
+		"Path to load the coupons configuration file from. If not set, this "+
+			"file must be named coupons.yaml and must be located in "+
 			"~/.xxnetwork/, /opt/xxnetwork, or /etc/xxnetwork.")
 }
 
@@ -189,7 +219,7 @@ func initConfig() {
 	validConfig = true
 	var err error
 	if cfgFile == "" {
-		cfgFile, err = utils.SearchDefaultLocations("udb.yaml", "xxnetwork")
+		cfgFile, err = utils.SearchDefaultLocations("coupons.yaml", "xxnetwork")
 		if err != nil {
 			validConfig = false
 			jww.FATAL.Panicf("Failed to find config file: %+v", err)
