@@ -138,7 +138,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Create & register callback to confirm any authenticated channel requests
-		rcb := func(requestor contact.Contact, msg string) {
+		rcb := func(requestor contact.Contact) {
 			rid, err := cl.ConfirmAuthenticatedChannel(requestor)
 			if err != nil {
 				jww.ERROR.Printf("Failed to confirm authenticated channel to %+v: %+v", requestor, err)
