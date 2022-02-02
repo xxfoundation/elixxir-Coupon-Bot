@@ -86,30 +86,32 @@ var rootCmd = &cobra.Command{
 
 		nwParams := params.GetDefaultNetwork()
 
+		useProto := protoUserPath != "" && utils.Exists(protoUserPath)
+		useSession := sessionPath != "" && utils.Exists(sessionPath)
+
+		if !useProto && !useSession {
+			err = api.NewClient(string(ndfJSON), sessionPath, []byte(sessionPass), "")
+			if err != nil {
+				jww.FATAL.Panicf("Failed to create new client: %+v", err)
+			}
+			useSession = true
+		}
+
 		var cl *api.Client
-		if sessionPath != "" && utils.Exists(sessionPath) {
+		if useSession {
 			//  If the session exists, load & login
 			// Create client object
 			cl, err = api.Login(sessionPath, []byte(sessionPass), nwParams)
 			if err != nil {
 				jww.FATAL.Panicf("Failed to initialize client: %+v", err)
 			}
-		} else if protoUserPath != "" && utils.Exists(protoUserPath) {
+		} else if useProto {
 			// If the session does not exist but we have a proto file
 			// Log in using the protofile (attempt to rebuild session)
 			cl, err = api.LoginWithProtoClient(sessionPath,
 				[]byte(sessionPass), protoUserJson, string(ndfJSON), nwParams)
 			if err != nil {
 				jww.FATAL.Fatalf("Failed to create client: %+v", err)
-			}
-		} else if sessionPath != "" {
-			err = api.NewClient(string(ndfJSON), sessionPath, []byte(sessionPass), "")
-			if err != nil {
-				jww.FATAL.Panicf("Failed to create new client: %+v", err)
-			}
-			cl, err = api.Login(sessionPath, []byte(sessionPass), nwParams)
-			if err != nil {
-				jww.FATAL.Panicf("Failed to initialize client: %+v", err)
 			}
 		} else {
 			jww.FATAL.Panicf("Cannot run with no session or proto info")
