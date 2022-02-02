@@ -106,6 +106,11 @@ var rootCmd = &cobra.Command{
 				jww.FATAL.Panicf("Failed to initialize client: %+v", err)
 			}
 		} else if useProto {
+			protoUserJson, err = utils.ReadFile(protoUserPath)
+			if err != nil {
+				jww.FATAL.Fatalf("Failed to read proto user at %s: %+v", protoUserPath, err)
+			}
+
 			// If the session does not exist but we have a proto file
 			// Log in using the protofile (attempt to rebuild session)
 			cl, err = api.LoginWithProtoClient(sessionPath,
