@@ -65,26 +65,54 @@ var rootCmd = &cobra.Command{
 
 		// Get session parameters
 		sessionPath := viper.GetString("sessionPath")
+
+		// Only require proto user path if session does not exist
+		var protoUserJson []byte
+		protoUserPath, err := utils.ExpandPath(viper.GetString("protoUserPath"))
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to read proto path: %+v", err)
+		} else if protoUserPath == "" {
+			jww.WARN.Printf("protoUserPath is blank - a new session will be generated")
+		}
+
 		sessionPass := viper.GetString("sessionPass")
 		networkFollowerTimeout := time.Duration(viper.GetInt("networkFollowerTimeout")) * time.Second
 
-		// Create the client if there's no session
-		if _, err := os.Stat(sessionPath); os.IsNotExist(err) {
-			ndfPath := viper.GetString("ndf")
-			ndfJSON, err := ioutil.ReadFile(ndfPath)
+		ndfPath := viper.GetString("ndf")
+		ndfJSON, err := ioutil.ReadFile(ndfPath)
+		if err != nil {
+			jww.FATAL.Panicf("Failed to read NDF: %+v", err)
+		}
+
+		nwParams := params.GetDefaultNetwork()
+
+		var cl *api.Client
+		if sessionPath != "" && utils.Exists(sessionPath) {
+			//  If the session exists, load & login
+			// Create client object
+			cl, err = api.Login(sessionPath, []byte(sessionPass), nwParams)
 			if err != nil {
-				jww.FATAL.Panicf("Failed to read NDF: %+v", err)
+				jww.FATAL.Panicf("Failed to initialize client: %+v", err)
 			}
+		} else if protoUserPath != "" && utils.Exists(protoUserPath) {
+			// If the session does not exist but we have a proto file
+			// Log in using the protofile (attempt to rebuild session)
+			cl, err = api.LoginWithProtoClient(sessionPath,
+				[]byte(sessionPass), protoUserJson, string(ndfJSON), nwParams)
+			if err != nil {
+				jww.FATAL.Fatalf("Failed to create client: %+v", err)
+			}
+		} else if sessionPath != "" {
 			err = api.NewClient(string(ndfJSON), sessionPath, []byte(sessionPass), "")
 			if err != nil {
 				jww.FATAL.Panicf("Failed to create new client: %+v", err)
 			}
-		}
-
-		// Create client object
-		cl, err := api.Login(sessionPath, []byte(sessionPass), params.GetDefaultNetwork())
-		if err != nil {
-			jww.FATAL.Panicf("Failed to initialize client: %+v", err)
+			cl, err = api.Login(sessionPath, []byte(sessionPass), nwParams)
+			if err != nil {
+				jww.FATAL.Panicf("Failed to initialize client: %+v", err)
+			}
+		} else {
+			jww.FATAL.Panicf("Cannot run with no session or proto info")
 		}
 
 		// Generate QR code
