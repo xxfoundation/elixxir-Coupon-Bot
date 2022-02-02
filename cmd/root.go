@@ -29,9 +29,9 @@ var (
 
 // RootCmd represents the base command when called without any sub-commands
 var rootCmd = &cobra.Command{
-	Use:   "UDB",
-	Short: "Runs the cMix UDB server.",
-	Long:  "The cMix UDB server handles user and fact registration for the network.",
+	Use:   "Coins",
+	Short: "Runs the coins bot.",
+	Long:  "The cMix coupon bot handles incoming requests to see coin redemption info",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config & logging
@@ -209,8 +209,8 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringVarP(&cfgFile, "config", "c", "",
-		"Path to load the UDB configuration file from. If not set, this "+
-			"file must be named udb.yaml and must be located in "+
+		"Path to load the coupons configuration file from. If not set, this "+
+			"file must be named coupons.yaml and must be located in "+
 			"~/.xxnetwork/, /opt/xxnetwork, or /etc/xxnetwork.")
 }
 
@@ -219,7 +219,7 @@ func initConfig() {
 	validConfig = true
 	var err error
 	if cfgFile == "" {
-		cfgFile, err = utils.SearchDefaultLocations("udb.yaml", "xxnetwork")
+		cfgFile, err = utils.SearchDefaultLocations("coupons.yaml", "xxnetwork")
 		if err != nil {
 			validConfig = false
 			jww.FATAL.Panicf("Failed to find config file: %+v", err)
