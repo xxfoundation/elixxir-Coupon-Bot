@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"git.xx.network/elixxir/coupons/coupons"
 	"git.xx.network/elixxir/coupons/storage"
+	"github.com/golang/protobuf/proto"
 	"github.com/skip2/go-qrcode"
 	"github.com/spf13/cobra"
 	jww "github.com/spf13/jwalterweatherman"
@@ -28,9 +29,9 @@ var (
 
 // RootCmd represents the base command when called without any sub-commands
 var rootCmd = &cobra.Command{
-	Use:   "UDB",
-	Short: "Runs the cMix UDB server.",
-	Long:  "The cMix UDB server handles user and fact registration for the network.",
+	Use:   "Coins",
+	Short: "Runs the coins bot.",
+	Long:  "The cMix coupon bot handles incoming requests to see coin redemption info",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config & logging
@@ -64,26 +65,61 @@ var rootCmd = &cobra.Command{
 
 		// Get session parameters
 		sessionPath := viper.GetString("sessionPath")
+
+		// Only require proto user path if session does not exist
+		var protoUserJson []byte
+		protoUserPath, err := utils.ExpandPath(viper.GetString("protoUserPath"))
+		if err != nil {
+			jww.FATAL.Fatalf("Failed to read proto path: %+v", err)
+		} else if protoUserPath == "" {
+			jww.WARN.Printf("protoUserPath is blank - a new session will be generated")
+		}
+
 		sessionPass := viper.GetString("sessionPass")
 		networkFollowerTimeout := time.Duration(viper.GetInt("networkFollowerTimeout")) * time.Second
 
-		// Create the client if there's no session
-		if _, err := os.Stat(sessionPath); os.IsNotExist(err) {
-			ndfPath := viper.GetString("ndf")
-			ndfJSON, err := ioutil.ReadFile(ndfPath)
-			if err != nil {
-				jww.FATAL.Panicf("Failed to read NDF: %+v", err)
-			}
+		ndfPath := viper.GetString("ndf")
+		ndfJSON, err := ioutil.ReadFile(ndfPath)
+		if err != nil {
+			jww.FATAL.Panicf("Failed to read NDF: %+v", err)
+		}
+
+		nwParams := params.GetDefaultNetwork()
+
+		useProto := protoUserPath != "" && utils.Exists(protoUserPath)
+		useSession := sessionPath != "" && utils.Exists(sessionPath)
+
+		if !useProto && !useSession {
 			err = api.NewClient(string(ndfJSON), sessionPath, []byte(sessionPass), "")
 			if err != nil {
 				jww.FATAL.Panicf("Failed to create new client: %+v", err)
 			}
+			useSession = true
 		}
 
-		// Create client object
-		cl, err := api.Login(sessionPath, []byte(sessionPass), params.GetDefaultNetwork())
-		if err != nil {
-			jww.FATAL.Panicf("Failed to initialize client: %+v", err)
+		var cl *api.Client
+		if useSession {
+			//  If the session exists, load & login
+			// Create client object
+			cl, err = api.Login(sessionPath, []byte(sessionPass), nwParams)
+			if err != nil {
+				jww.FATAL.Panicf("Failed to initialize client: %+v", err)
+			}
+		} else if useProto {
+			protoUserJson, err = utils.ReadFile(protoUserPath)
+			if err != nil {
+				jww.FATAL.Fatalf("Failed to read proto user at %s: %+v", protoUserPath, err)
+			}
+
+			// If the session does not exist but we have a proto file
+			// Log in using the protofile (attempt to rebuild session)
+			cl, err = api.LoginWithProtoClient(sessionPath,
+				[]byte(sessionPass), protoUserJson, string(ndfJSON), nwParams)
+			if err != nil {
+				jww.FATAL.Fatalf("Failed to create client: %+v", err)
+			}
+		} else {
+			jww.FATAL.Panicf("Cannot run with no session or proto info")
 		}
 
 		// Generate QR code
@@ -91,7 +127,7 @@ var rootCmd = &cobra.Command{
 		qrLevel := qrcode.RecoveryLevel(viper.GetInt("qrLevel"))
 		qrPath := viper.GetString("qrPath")
 		me := cl.GetUser().GetContact()
-		couponsUsername, err := fact.NewFact(fact.Username, "xx Coupons Bot")
+		couponsUsername, err := fact.NewFact(fact.Username, "xx-bonus-coin-bot")
 		if err != nil {
 			jww.FATAL.Panicf("Failed to create username: %+v", err)
 		}
@@ -106,25 +142,62 @@ var rootCmd = &cobra.Command{
 			jww.FATAL.Panicf("Failed to write QR code: %+v", err)
 		}
 
-		// Start network follower
-		err = cl.StartNetworkFollower(networkFollowerTimeout)
-		if err != nil {
-			jww.FATAL.Panicf("Failed to start network follower: %+v", err)
-		}
-
 		// Create & register callback to confirm any authenticated channel requests
-		rcb := func(requestor contact.Contact, message string) {
+		rcb := func(requestor contact.Contact) {
 			rid, err := cl.ConfirmAuthenticatedChannel(requestor)
 			if err != nil {
 				jww.ERROR.Printf("Failed to confirm authenticated channel to %+v: %+v", requestor, err)
 			}
 			jww.DEBUG.Printf("Authenticated channel to %+v created over round %d", requestor, rid)
+
+			time.Sleep(100 * time.Millisecond)
+
+			intro := "Thank you for your interest in xx coin! This bot allows purchasers in the " +
+				"November Community Sale to claim their extra bonus 100% xx coins for using the xx messenger.\n" +
+				"You have received an email from the team with a code you will need to use in order to claim coins.\n" +
+				"Please send that code to this bot, which will confirm your receipt. The coins will be sent to your " +
+				"wallet within 2 weeks.\nCoins will be received in the wallet you received the initial purchase amount in.\n"
+			payload := &coupons.CMIXText{
+				Version: 0,
+				Text:    intro,
+			}
+			marshalled, err := proto.Marshal(payload)
+			if err != nil {
+				jww.ERROR.Printf("Failed to marshal payload: %+v", err)
+				return
+			}
+
+			contact, err := cl.GetAuthenticatedChannelRequest(requestor.ID)
+			if err != nil {
+				jww.ERROR.Printf("Could not get authenticated channel request info: %+v", err)
+				return
+			}
+
+			// Create response message
+			resp := message.Send{
+				Recipient:   contact.ID,
+				Payload:     marshalled,
+				MessageType: message.XxMessage,
+			}
+
+			rids, mid, t, err := cl.SendE2E(resp, params.GetDefaultE2E())
+			if err != nil {
+				jww.ERROR.Printf("Failed to send message: %+v", err)
+				return
+			}
+			jww.INFO.Printf("Sent intro [%+v] to %+v on rounds %+v [%+v]", mid, requestor, rids, t)
 		}
 		cl.GetAuthRegistrar().AddGeneralRequestCallback(rcb)
 
 		// Create coupons impl & register listener on zero user for text messages
 		impl := coupons.New(s, cl)
-		cl.GetSwitchboard().RegisterListener(&id.ZeroUser, message.Text, impl)
+		cl.GetSwitchboard().RegisterListener(&id.ZeroUser, message.XxMessage, impl)
+
+		// Start network follower
+		err = cl.StartNetworkFollower(networkFollowerTimeout)
+		if err != nil {
+			jww.FATAL.Panicf("Failed to start network follower: %+v", err)
+		}
 
 		// Wait 5ever
 		select {}
@@ -141,8 +214,8 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringVarP(&cfgFile, "config", "c", "",
-		"Path to load the UDB configuration file from. If not set, this "+
-			"file must be named udb.yaml and must be located in "+
+		"Path to load the coupons configuration file from. If not set, this "+
+			"file must be named coupons.yaml and must be located in "+
 			"~/.xxnetwork/, /opt/xxnetwork, or /etc/xxnetwork.")
 }
 
@@ -151,7 +224,7 @@ func initConfig() {
 	validConfig = true
 	var err error
 	if cfgFile == "" {
-		cfgFile, err = utils.SearchDefaultLocations("udb.yaml", "xxnetwork")
+		cfgFile, err = utils.SearchDefaultLocations("coupons.yaml", "xxnetwork")
 		if err != nil {
 			validConfig = false
 			jww.FATAL.Panicf("Failed to find config file: %+v", err)

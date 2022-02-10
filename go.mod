@@ -9,10 +9,10 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.9.0
-	gitlab.com/elixxir/client v1.5.1-0.20211108203412-047b81be6c67
-	gitlab.com/elixxir/crypto v0.0.7-0.20211022013957-3a7899285c4c
-	gitlab.com/elixxir/primitives v0.0.3-0.20211014164029-06022665b576
-	gitlab.com/xx_network/primitives v0.0.4-0.20211014163031-53405cf191fb
+	gitlab.com/elixxir/client v1.5.1-0.20220202192535-930327652941
+	gitlab.com/elixxir/crypto v0.0.7-0.20220110170041-7e42f2e8b062
+	gitlab.com/elixxir/primitives v0.0.3-0.20220104173924-275cb9d7834f
+	gitlab.com/xx_network/primitives v0.0.4-0.20211222205802-03e9d7d835b0
 	gorm.io/driver/postgres v1.1.2
 	gorm.io/gorm v1.21.15
 )

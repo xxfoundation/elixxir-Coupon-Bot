@@ -13,8 +13,10 @@ import (
 
 // database interface holds function definitions for storage
 type database interface {
-	GetCouponCode(trigger string) (string, error)
+	CheckUser(id string) (string, error)
+	GetCouponCode(trigger string) (string, int, error)
 	InsertCoupon(c Coupon) error
+	UseCode(id, trigger string) error
 }
 
 // DatabaseImpl struct implements the database interface with an underlying DB
@@ -24,15 +26,22 @@ type DatabaseImpl struct {
 
 // MapImpl struct implements the database interface with an underlying Map
 type MapImpl struct {
-	coupons map[string]Coupon
+	coupons map[string]*Coupon
+	users   map[string]*Coupon
 	sync.RWMutex
+}
+
+type User struct {
+	ID      string `gorm:"primary_key"`
+	Trigger string
+	Coupon  Coupon `gorm:"foreignkey:trigger;references:trigger"`
 }
 
 // Coupon struct defines coupons in the db
 type Coupon struct {
 	Trigger string `gorm:"primary_key"`
-	Code    string `gorm:"NOT NULL;unique;"`
-	Uses    uint
+	Code    string `gorm:"NOT NULL;"`
+	Uses    int
 }
 
 // newDatabase initializes the database interface
@@ -70,7 +79,8 @@ func newDatabase(username, password, dbName, address,
 		defer jww.INFO.Println("Map backend initialized successfully!")
 
 		mapImpl := &MapImpl{
-			coupons: map[string]Coupon{},
+			coupons: map[string]*Coupon{},
+			users:   map[string]*Coupon{},
 		}
 
 		return database(mapImpl), nil
@@ -92,7 +102,7 @@ func newDatabase(username, password, dbName, address,
 
 	// Initialize the database schema
 	// WARNING: Order is important. Do not change without database testing
-	models := []interface{}{Coupon{}}
+	models := []interface{}{Coupon{}, User{}}
 	for _, model := range models {
 		err = db.AutoMigrate(model)
 		if err != nil {

@@ -13,8 +13,9 @@ func TestDatabase(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to initialize storage: %+v", err)
 	}
+	trigger := "up up down down left right left right b a start"
 	err = s.InsertCoupon(Coupon{
-		Trigger: "up up down down left right left right b a start",
+		Trigger: trigger,
 		Code:    "helpimtrappedinacouponfactory",
 		Uses:    1,
 	})
@@ -22,7 +23,7 @@ func TestDatabase(t *testing.T) {
 		t.Errorf("Failed to insert coupon: %+v", err)
 	}
 
-	c, err := s.GetCouponCode("up up down down left right left right b a start")
+	c, _, err := s.GetCouponCode("up up down down left right left right b a start")
 	if err != nil {
 		t.Errorf("Failed to get coupon code: %+v", err)
 	}
@@ -31,8 +32,13 @@ func TestDatabase(t *testing.T) {
 		t.Errorf("Did not get expected coupon")
 	}
 
-	_, err = s.GetCouponCode("up up down down left right left right b a start")
-	if err == nil {
-		t.Error("Should have given error w/ no uses left")
+	err = s.UseCode("zezima", trigger)
+	if err != nil {
+		t.Errorf("Failed to use code: %+v", err)
+	}
+
+	_, uses, err := s.GetCouponCode("up up down down left right left right b a start")
+	if uses > 0 {
+		t.Error("Should not have any uses left")
 	}
 }
