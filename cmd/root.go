@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"git.xx.network/elixxir/coupons/coupons"
 	"git.xx.network/elixxir/coupons/storage"
-	"github.com/golang/protobuf/proto"
 	"github.com/skip2/go-qrcode"
 	"github.com/spf13/cobra"
 	jww "github.com/spf13/jwalterweatherman"
@@ -16,6 +15,7 @@ import (
 	"gitlab.com/elixxir/primitives/fact"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/utils"
+	"google.golang.org/protobuf/proto"
 	"io/ioutil"
 	"net"
 	"os"
@@ -24,7 +24,6 @@ import (
 
 var (
 	cfgFile, logPath string
-	validConfig      bool
 )
 
 // RootCmd represents the base command when called without any sub-commands
@@ -221,18 +220,15 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	validConfig = true
 	var err error
 	if cfgFile == "" {
 		cfgFile, err = utils.SearchDefaultLocations("coupons.yaml", "xxnetwork")
 		if err != nil {
-			validConfig = false
 			jww.FATAL.Panicf("Failed to find config file: %+v", err)
 		}
 	} else {
 		cfgFile, err = utils.ExpandPath(cfgFile)
 		if err != nil {
-			validConfig = false
 			jww.FATAL.Panicf("Failed to expand config file path: %+v", err)
 		}
 	}
@@ -242,7 +238,6 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("Unable to read config file (%s): %+v", cfgFile, err.Error())
-		validConfig = false
 	}
 }
 

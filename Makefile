@@ -3,10 +3,6 @@
 setup:
 	git config --global --add url."git@gitlab.com:".insteadOf "https://gitlab.com/"
 
-version:
-	go run main.go generate
-	mv version_vars.go cmd/version_vars.go
-
 clean:
 	rm -rf vendor/
 	go mod vendor
@@ -35,6 +31,6 @@ update_master:
 	GOFLAGS="" go get gitlab.com/xx_network/comms@master
 	GOFLAGS="" go get gitlab.com/elixxir/client@master
 
-master: update_master clean build version
+master: update_master clean build
 
-release: update_release clean build version
+release: update_release clean build
