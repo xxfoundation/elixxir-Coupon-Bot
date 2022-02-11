@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "gitlab.com/elixxir/coupon-bot/coupons";
 
 package coupons;
 
