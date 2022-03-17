@@ -9,10 +9,10 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/viper v1.9.0
-	gitlab.com/elixxir/client v1.5.1-0.20220310174642-afd134998221
-	gitlab.com/elixxir/crypto v0.0.7-0.20220309234716-1ba339865787
-	gitlab.com/elixxir/primitives v0.0.3-0.20220222212109-d412a6e46623
-	gitlab.com/xx_network/primitives v0.0.4-0.20220222211843-901fa4a2d72b
+	gitlab.com/elixxir/client v1.5.1-0.20220317165623-c22f332043b2
+	gitlab.com/elixxir/crypto v0.0.7-0.20220317172048-3de167bd9406
+	gitlab.com/elixxir/primitives v0.0.3-0.20220317172813-0cfece3e0ac0
+	gitlab.com/xx_network/primitives v0.0.4-0.20220317172007-4d2a53e6e669
 	gorm.io/driver/postgres v1.1.2
 	gorm.io/gorm v1.21.15
 )
@@ -48,10 +48,10 @@ require (
 	github.com/ttacon/libphonenumber v1.2.1 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	gitlab.com/elixxir/bloomfilter v0.0.0-20200930191214-10e9ac31b228 // indirect
-	gitlab.com/elixxir/comms v0.0.4-0.20220308183624-c2183e687a03 // indirect
+	gitlab.com/elixxir/comms v0.0.4-0.20220317172604-2c4046a13e35 // indirect
 	gitlab.com/elixxir/ekv v0.1.6 // indirect
-	gitlab.com/xx_network/comms v0.0.4-0.20220223205228-7c4974139569 // indirect
-	gitlab.com/xx_network/crypto v0.0.5-0.20220222212031-750f7e8a01f4 // indirect
+	gitlab.com/xx_network/comms v0.0.4-0.20220315161313-76acb14429ac // indirect
+	gitlab.com/xx_network/crypto v0.0.5-0.20220317171841-084640957d71 // indirect
 	gitlab.com/xx_network/ring v0.0.3-0.20220222211904-da613960ad93 // indirect
 	golang.org/x/crypto v0.0.0-20220128200615-198e4374d7ed // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
