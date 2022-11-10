@@ -9,7 +9,7 @@ package coupons
 
 import (
 	"git.xx.network/elixxir/coupons/storage"
-	"gitlab.com/elixxir/client/api"
+	"gitlab.com/elixxir/client/v5/api"
 )
 
 // Impl struct wraps the listener for coupons
