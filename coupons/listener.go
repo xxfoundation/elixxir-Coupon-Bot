@@ -10,22 +10,22 @@ package coupons
 import (
 	"errors"
 	"fmt"
-	"git.xx.network/elixxir/coupons/storage"
-	"github.com/golang/protobuf/proto"
-	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/elixxir/client/v5/api"
-	"gitlab.com/elixxir/client/v5/interfaces/message"
-	"gitlab.com/elixxir/client/v5/interfaces/params"
-	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"time"
+
+	"git.xx.network/elixxir/coupons/storage"
+	"github.com/golang/protobuf/proto"
+	jww "github.com/spf13/jwalterweatherman"
+	"gitlab.com/elixxir/client/v5/interfaces/message"
+	"gitlab.com/elixxir/client/v5/interfaces/params"
+	"gorm.io/gorm"
 )
 
 type listener struct {
 	delay time.Duration
 	s     *storage.Storage
-	c     *api.Client
+	c     *e2e.Client
 }
 
 var validResponse = "Thank you! You will receive %d xx in %s within 2 weeks!"

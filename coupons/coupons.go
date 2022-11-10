@@ -9,7 +9,7 @@ package coupons
 
 import (
 	"git.xx.network/elixxir/coupons/storage"
-	"gitlab.com/elixxir/client/v5/api"
+	"gitlab.com/elixxir/client/v5/cmix"
 )
 
 // Impl struct wraps the listener for coupons
@@ -18,7 +18,7 @@ type Impl struct {
 }
 
 // New initializes a listener with passed in storage and client
-func New(s *storage.Storage, c *api.Client) *Impl {
+func New(s *storage.Storage, c *cmix.Client) *Impl {
 	return &Impl{
 		&listener{
 			s: s,
